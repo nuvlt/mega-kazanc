@@ -14,6 +14,17 @@ function getSegmentColor(seg) {
   return '#222'
 }
 
+function getSegmentHighlightColor(seg) {
+  // Landing flash için neon parlama rengi
+  if (seg.type === 'color') return COLORS[seg.color].glow
+  if (seg.type === 'star') return '#ffd60a'
+  if (seg.type === 'arrow') return '#00e5ff'
+  if (seg.type === 'gift') return '#ff2e9a'
+  if (seg.type === 'instant') return '#aaff00'
+  if (seg.type === 'minigame') return '#ff2e9a'
+  return '#fff'
+}
+
 function getSegmentLabel(seg) {
   if (seg.type === 'color') return ''
   if (seg.type === 'star') return '★'
@@ -58,8 +69,10 @@ function pegPosition(index) {
 
 export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }) {
   const [rotation, setRotation] = useState(0)
+  const [landedIndex, setLandedIndex] = useState(null)
   const prevSignalRef = useRef(0)
   const timerRef = useRef(null)
+  const flashTimerRef = useRef(null)
 
   useEffect(() => {
     if (!spinSignal) return
@@ -67,6 +80,10 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
     if (targetIndex === null || targetIndex === undefined) return
 
     prevSignalRef.current = spinSignal
+
+    // Yeni spin başlıyor - eski flash'ı temizle
+    setLandedIndex(null)
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
 
     const targetAngle = -(targetIndex * SEGMENT_ANGLE)
     const fullTurns = 5 + Math.floor(Math.random() * 2)
@@ -78,12 +95,21 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
       onSpinEnd?.()
+      // Spin bitince landing flash başlat
+      setLandedIndex(targetIndex)
+      flashTimerRef.current = setTimeout(() => {
+        setLandedIndex(null)
+      }, 2400)
     }, 4100)
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [spinSignal, targetIndex, onSpinEnd])
+
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+  }, [])
 
   const rotatingGroupStyle = {
     transformOrigin: '200px 200px',
@@ -92,12 +118,47 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
   }
 
   return (
-    <div className={`wheel-stage${isSpinning ? ' is-spinning' : ''}`}>
+    <div className={`wheel-stage${isSpinning ? ' is-spinning' : ''}${landedIndex !== null ? ' just-landed' : ''}`}>
+      {/* Arka plan spotlight (pulse'lu) */}
       <div className="wheel-spotlight" aria-hidden="true" />
+
+      {/* Dönen ışık huzmeleri - sadece spin sırasında */}
+      <div className="wheel-rays" aria-hidden="true">
+        <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="rayGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stopColor="rgba(170, 255, 0, 0)" />
+              <stop offset="50%" stopColor="rgba(170, 255, 0, 0.4)" />
+              <stop offset="100%" stopColor="rgba(170, 255, 0, 0)" />
+            </linearGradient>
+            <linearGradient id="rayGrad2" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stopColor="rgba(0, 229, 255, 0)" />
+              <stop offset="50%" stopColor="rgba(0, 229, 255, 0.35)" />
+              <stop offset="100%" stopColor="rgba(0, 229, 255, 0)" />
+            </linearGradient>
+          </defs>
+          {[0, 60, 120, 180, 240, 300].map((a) => (
+            <path
+              key={`ray-${a}`}
+              d="M 200 -50 L 210 200 L 200 250 L 190 200 Z"
+              fill="url(#rayGrad)"
+              transform={`rotate(${a} 200 200)`}
+            />
+          ))}
+          {[30, 90, 150, 210, 270, 330].map((a) => (
+            <path
+              key={`ray2-${a}`}
+              d="M 200 -50 L 208 200 L 200 240 L 192 200 Z"
+              fill="url(#rayGrad2)"
+              transform={`rotate(${a} 200 200)`}
+            />
+          ))}
+        </svg>
+      </div>
+
       <div className="wheel-container">
         <svg viewBox="0 0 400 400" className="wheel-svg" aria-label="Mega Kazanç çarkı">
           <defs>
-            {/* Krom/altın halka gradyanı */}
             <linearGradient id="chromeRing" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#f5d76e" />
               <stop offset="22%" stopColor="#7a5f1a" />
@@ -106,14 +167,12 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
               <stop offset="100%" stopColor="#f5d76e" />
             </linearGradient>
 
-            {/* Merkez orb */}
             <radialGradient id="centerOrb" cx="35%" cy="28%">
               <stop offset="0%" stopColor="#6a3eb0" />
               <stop offset="50%" stopColor="#1e0d3e" />
               <stop offset="100%" stopColor="#06010f" />
             </radialGradient>
 
-            {/* Vinyet - dilim merkezine doğru karartma */}
             <radialGradient id="wheelVignette" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="rgba(0,0,0,0.55)" />
               <stop offset="35%" stopColor="rgba(0,0,0,0.2)" />
@@ -121,21 +180,18 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
               <stop offset="100%" stopColor="rgba(0,0,0,0)" />
             </radialGradient>
 
-            {/* Üst parlama - statik ışık yansıması */}
             <radialGradient id="wheelTopShine" cx="50%" cy="12%" r="38%">
               <stop offset="0%" stopColor="rgba(255,255,255,0.34)" />
               <stop offset="55%" stopColor="rgba(255,255,255,0.06)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </radialGradient>
 
-            {/* Mor/cyan halo (dış glow) */}
             <radialGradient id="wheelHalo" cx="50%" cy="50%" r="50%">
               <stop offset="58%" stopColor="rgba(180,120,255,0)" />
               <stop offset="88%" stopColor="rgba(180,120,255,0.18)" />
               <stop offset="100%" stopColor="rgba(180,120,255,0)" />
             </radialGradient>
 
-            {/* Altın çivi */}
             <radialGradient id="pegGrad" cx="40%" cy="35%">
               <stop offset="0%" stopColor="#fff5a0" />
               <stop offset="50%" stopColor="#f5d76e" />
@@ -143,19 +199,12 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
             </radialGradient>
           </defs>
 
-          {/* Halo (dış mor parıltı) */}
           <circle cx="200" cy="200" r="198" fill="url(#wheelHalo)" />
-
-          {/* Koyu dış sınır */}
           <circle cx="200" cy="200" r="194" fill="#06010f" />
-
-          {/* Krom / altın ana halka */}
           <circle cx="200" cy="200" r="190" fill="url(#chromeRing)" />
-
-          {/* Koyu iç ayraç */}
           <circle cx="200" cy="200" r="182" fill="#0a0220" />
 
-          {/* DÖNEN GRUP - dilimler + etiketler + çiviler */}
+          {/* DÖNEN GRUP */}
           <g style={rotatingGroupStyle}>
             {WHEEL_SEGMENTS.map((seg, i) => (
               <path
@@ -193,7 +242,7 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
               )
             })}
 
-            {/* Çiviler (dilim sınırlarında altın boncuklar) */}
+            {/* Çiviler */}
             {Array.from({ length: SEGMENT_COUNT }).map((_, i) => {
               const peg = pegPosition(i)
               return (
@@ -204,23 +253,41 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
                 </g>
               )
             })}
+
+            {/* LANDING FLASH - kazanan dilim üstüne neon overlay */}
+            {landedIndex !== null && (
+              <g pointerEvents="none">
+                {/* Beyaz parlama overlay (mix-blend-mode: screen) */}
+                <path
+                  d={segmentPath(landedIndex)}
+                  fill="white"
+                  style={{ mixBlendMode: 'screen' }}
+                  className="segment-flash"
+                />
+                {/* Renkli halo kenar */}
+                <path
+                  d={segmentPath(landedIndex)}
+                  fill="none"
+                  stroke={getSegmentHighlightColor(WHEEL_SEGMENTS[landedIndex])}
+                  strokeWidth="4"
+                  className="segment-flash-halo"
+                  style={{
+                    filter: `drop-shadow(0 0 16px ${getSegmentHighlightColor(WHEEL_SEGMENTS[landedIndex])})`,
+                  }}
+                />
+              </g>
+            )}
           </g>
 
-          {/* STATİK ÖRTÜLER (dönmüyor) */}
-          {/* Vinyet karartma - merkezi koyu, kenar açık */}
+          {/* STATİK ÖRTÜLER */}
           <circle cx="200" cy="200" r="182" fill="url(#wheelVignette)" pointerEvents="none" />
-          {/* Üst parlak ışık yansıması (her zaman 12 yönde) */}
           <circle cx="200" cy="200" r="182" fill="url(#wheelTopShine)" pointerEvents="none" />
 
-          {/* STATİK MERKEZ HUB */}
-          {/* Krom hub çerçevesi */}
+          {/* MERKEZ HUB */}
           <circle cx="200" cy="200" r="62" fill="url(#chromeRing)" stroke="#06010f" strokeWidth="2" />
-          {/* Merkez orb */}
           <circle cx="200" cy="200" r="54" fill="url(#centerOrb)" stroke="rgba(170,255,0,0.45)" strokeWidth="1.5" />
-          {/* İç dekoratif noktalı halka */}
           <circle cx="200" cy="200" r="44" fill="none" stroke="rgba(170,255,0,0.18)" strokeWidth="1" strokeDasharray="2 3" />
 
-          {/* Mini renk çarkı logosu */}
           <g transform="translate(200, 187)">
             <path d="M 0 -11 A 11 11 0 0 1 9.53 5.5 L 0 0 Z" fill="#ff3366" />
             <path d="M 9.53 5.5 A 11 11 0 0 1 -9.53 5.5 L 0 0 Z" fill="#ffd60a" />
@@ -228,7 +295,6 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
             <circle r="2.5" fill="#0a0220" />
           </g>
 
-          {/* MEGA metni */}
           <text
             x="200" y="218"
             textAnchor="middle"
@@ -241,7 +307,7 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
           </text>
         </svg>
 
-        {/* POINTER - SVG, statik, çarkın üstünde 12 yönünde */}
+        {/* POINTER */}
         <div className="wheel-pointer" aria-hidden="true">
           <svg viewBox="0 0 44 52" width="100%" height="100%">
             <defs>
@@ -251,11 +317,8 @@ export default function Wheel({ spinSignal, targetIndex, isSpinning, onSpinEnd }
                 <stop offset="100%" stopColor="#a87600" />
               </linearGradient>
             </defs>
-            {/* Ana gövde */}
             <path d="M 22 6 L 39 10 L 22 50 L 5 10 Z" fill="url(#pointerGold)" stroke="#3d2f0d" strokeWidth="1.5" />
-            {/* Parlama */}
             <path d="M 22 10 L 30 12 L 22 32 Z" fill="rgba(255,255,255,0.45)" />
-            {/* Tepe vurgu */}
             <circle cx="22" cy="10" r="2" fill="#fff5a0" />
           </svg>
         </div>

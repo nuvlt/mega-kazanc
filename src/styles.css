@@ -874,13 +874,332 @@ button:disabled {
 .glow-cyan { color: var(--accent-cyan); text-shadow: 0 0 12px rgba(0, 229, 255, 0.5); }
 .glow-lime { color: var(--accent-lime); text-shadow: 0 0 12px rgba(170, 255, 0, 0.5); }
 
+/* ============================================
+   EFEKTLER
+   ============================================ */
+
+/* --- Çark - Dönen ışık huzmeleri --- */
+.wheel-rays {
+  position: absolute;
+  inset: -8%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  filter: blur(2px);
+  transform-origin: 50% 50%;
+}
+
+.wheel-rays svg {
+  width: 100%;
+  height: 100%;
+}
+
+.wheel-stage.is-spinning .wheel-rays {
+  opacity: 0.85;
+  animation: raysRotate 2.2s linear infinite;
+}
+
+@keyframes raysRotate {
+  to { transform: rotate(360deg); }
+}
+
+.wheel-stage.is-spinning .wheel-spotlight {
+  animation: spotlightPulseStrong 1s ease-in-out infinite;
+}
+
+@keyframes spotlightPulseStrong {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1.1; transform: scale(1.12); }
+}
+
+.wheel-stage.is-spinning .wheel-svg {
+  filter: drop-shadow(0 0 50px rgba(170, 255, 0, 0.55));
+}
+
+/* --- Çark - Landing flash (kazanan dilim) --- */
+.segment-flash {
+  animation: segmentFlashPulse 600ms ease-out 4;
+  opacity: 0;
+}
+
+@keyframes segmentFlashPulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.7; }
+}
+
+.segment-flash-halo {
+  animation: segmentHaloGrow 2.4s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes segmentHaloGrow {
+  0% { opacity: 0; stroke-width: 0; }
+  20% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0.6; stroke-width: 3; }
+}
+
+.wheel-stage.just-landed .wheel-svg {
+  animation: wheelLandPulse 800ms ease-out;
+}
+
+@keyframes wheelLandPulse {
+  0% { filter: drop-shadow(0 0 30px rgba(120, 80, 200, 0.45)) brightness(1); }
+  30% { filter: drop-shadow(0 0 50px rgba(255, 214, 10, 0.7)) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 30px rgba(120, 80, 200, 0.45)) brightness(1); }
+}
+
+/* --- Kule - Vurulduğunda sallanma --- */
+.tower--hit {
+  animation: towerShake 480ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes towerShake {
+  10%, 90% { transform: translate(-1px, 0); }
+  20%, 80% { transform: translate(2px, 0); }
+  30%, 50%, 70% { transform: translate(-4px, 1px); }
+  40%, 60% { transform: translate(4px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Vurulma anında çıkan beyaz patlama + toz */
+.tower-impact {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120%;
+  height: 60px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tower-impact-burst {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--block-color) 0%, transparent 60%);
+  animation: impactBurst 500ms ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes impactBurst {
+  0% { transform: scale(0); opacity: 0.95; }
+  60% { transform: scale(1.8); opacity: 0.7; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+.tower-impact-dust {
+  position: absolute;
+  left: 0; right: 0; top: 8px;
+  height: 30px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.5) 0%, transparent 70%);
+  filter: blur(4px);
+  animation: impactDust 700ms ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes impactDust {
+  0% { transform: scaleY(0.3); opacity: 0; }
+  30% { transform: scaleY(1); opacity: 0.8; }
+  100% { transform: scaleY(1.4) translateY(20px); opacity: 0; }
+}
+
+/* Blok yıkım - sol/sağ alternatif yön */
+.tower-block.destroying-left {
+  animation: blockFallLeft 700ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  z-index: 5;
+}
+
+.tower-block.destroying-right {
+  animation: blockFallRight 700ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  z-index: 5;
+}
+
+@keyframes blockFallLeft {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0);
+    opacity: 1;
+    filter: brightness(2);
+  }
+  20% {
+    transform: translate(-3px, -12px) scale(1.2) rotate(-15deg);
+    opacity: 1;
+    filter: brightness(2.8) saturate(1.4);
+  }
+  100% {
+    transform: translate(-30px, 80px) scale(0.25) rotate(-220deg);
+    opacity: 0;
+    filter: brightness(0.5);
+  }
+}
+
+@keyframes blockFallRight {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0);
+    opacity: 1;
+    filter: brightness(2);
+  }
+  20% {
+    transform: translate(3px, -12px) scale(1.2) rotate(15deg);
+    opacity: 1;
+    filter: brightness(2.8) saturate(1.4);
+  }
+  100% {
+    transform: translate(30px, 80px) scale(0.25) rotate(220deg);
+    opacity: 0;
+    filter: brightness(0.5);
+  }
+}
+
+/* Eski blockShatter'ı override etme - geriye dönük uyumluluk */
+.tower-block.destroying {
+  animation: blockFallLeft 700ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  z-index: 5;
+}
+
+/* --- Floating prize (+X TL) --- */
+.floating-prize {
+  position: fixed;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  animation: floatPrizeUp 1.6s cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+  text-shadow: 0 0 0 transparent;
+}
+
+.floating-prize--gold {
+  color: var(--gold);
+  text-shadow:
+    0 0 16px rgba(255, 214, 10, 0.9),
+    0 0 32px rgba(255, 214, 10, 0.5),
+    0 4px 4px rgba(0, 0, 0, 0.6);
+}
+
+.floating-prize--cyan {
+  color: var(--accent-cyan);
+  text-shadow:
+    0 0 16px rgba(0, 229, 255, 0.9),
+    0 0 32px rgba(0, 229, 255, 0.5),
+    0 4px 4px rgba(0, 0, 0, 0.6);
+}
+
+.floating-prize--lime {
+  color: var(--accent-lime);
+  text-shadow:
+    0 0 16px rgba(170, 255, 0, 0.9),
+    0 0 32px rgba(170, 255, 0, 0.5),
+    0 4px 4px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes floatPrizeUp {
+  0% {
+    transform: translate(-50%, -20%) scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 1;
+  }
+  35% {
+    transform: translate(-50%, -55%) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -180%) scale(0.85);
+    opacity: 0;
+  }
+}
+
+/* --- Confetti --- */
+.confetti-layer {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 55;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 2px;
+  animation: confettiBurst 1700ms cubic-bezier(0.2, 0.55, 0.45, 1) forwards;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.confetti-shape-1 {
+  border-radius: 50%;
+}
+
+.confetti-shape-2 {
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+@keyframes confettiBurst {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), calc(var(--dy) + 320px)) rotate(var(--rotation));
+    opacity: 0;
+  }
+}
+
+/* --- Win Flash (jackpot/büyük kazanç) --- */
+.win-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.win-flash-burst {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, rgba(255, 214, 10, 0.5) 0%, rgba(255, 214, 10, 0.25) 30%, transparent 60%),
+    linear-gradient(135deg, rgba(255, 214, 10, 0.1), rgba(170, 255, 0, 0.1));
+  animation: winFlashPulse 1500ms ease-out forwards;
+}
+
+@keyframes winFlashPulse {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  40% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .wheel-svg {
+  .wheel-stage > svg g {
     transition: transform 1s linear !important;
+  }
+  .floating-prize, .confetti-piece, .win-flash-burst {
+    display: none !important;
   }
 }

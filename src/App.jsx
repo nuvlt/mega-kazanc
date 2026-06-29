@@ -17,6 +17,9 @@ import MiniTracker from './components/MiniTracker.jsx'
 import Controls from './components/Controls.jsx'
 import MiniGameModal from './components/MiniGameModal.jsx'
 import ResultModal from './components/ResultModal.jsx'
+import FloatingPrize from './components/FloatingPrize.jsx'
+import Confetti from './components/Confetti.jsx'
+import WinFlash from './components/WinFlash.jsx'
 
 function formatTL(amount) {
   return amount.toLocaleString('tr-TR') + ' TL'
@@ -57,6 +60,49 @@ export default function App() {
     }, 8000)
   }, [])
 
+  // --- Efektler ---
+  const [floatingPrizes, setFloatingPrizes] = useState([])
+  const [confettiTrigger, setConfettiTrigger] = useState(null) // { key, x, y } | null
+  const [winFlashTrigger, setWinFlashTrigger] = useState(null) // string key | null
+
+  const getWheelCenter = useCallback(() => {
+    if (typeof document === 'undefined') {
+      return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    }
+    const el = document.querySelector('.wheel-stage')
+    if (!el) return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const rect = el.getBoundingClientRect()
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    }
+  }, [])
+
+  const addFloatingPrize = useCallback((amount, x, y, variant) => {
+    if (!amount || amount <= 0) return
+    const id = Math.random().toString(36).slice(2)
+    setFloatingPrizes((p) => [...p, { id, amount, x, y, variant }])
+    setTimeout(() => {
+      setFloatingPrizes((p) => p.filter((x) => x.id !== id))
+    }, 1800)
+  }, [])
+
+  const triggerConfetti = useCallback((x, y) => {
+    const key = Math.random().toString(36).slice(2)
+    setConfettiTrigger({ key, x, y })
+    setTimeout(() => {
+      setConfettiTrigger((prev) => (prev?.key === key ? null : prev))
+    }, 2200)
+  }, [])
+
+  const triggerWinFlash = useCallback(() => {
+    const key = Math.random().toString(36).slice(2)
+    setWinFlashTrigger(key)
+    setTimeout(() => {
+      setWinFlashTrigger((prev) => (prev === key ? null : prev))
+    }, 1800)
+  }, [])
+
   // --- Tur başlat ---
   const startRound = useCallback(() => {
     if (balance < betAmount) {
@@ -95,6 +141,14 @@ export default function App() {
       pushToast(`${colorName}: ${event.blocksDestroyed} blok yıkıldı`)
       if (event.rowCompleted) {
         setTimeout(() => pushToast(`🏆 ${colorName} barem tamamlandı: ${formatTL(event.prizeWon)}!`), 300)
+        // Efekt: ödül süzülmesi + konfeti
+        const c = getWheelCenter()
+        addFloatingPrize(event.prizeWon, c.x, c.y, 'gold')
+        triggerConfetti(c.x, c.y)
+        // Yeşil = jackpot, ek ekran parlaması
+        if (event.color === 'green') {
+          triggerWinFlash()
+        }
       }
       setRecentlyDestroyed({ color: event.color, count: event.blocksDestroyed })
       setTimeout(() => setRecentlyDestroyed(null), 600)
@@ -108,10 +162,13 @@ export default function App() {
       setTimeout(() => setBonusSpinFlash(false), 2000)
     } else if (event.type === 'instant') {
       pushToast(`💰 Anında Kazan: ${formatTL(event.prize)}`)
+      // Efekt: yeşil/lime "+X TL" süzülmesi
+      const c = getWheelCenter()
+      addFloatingPrize(event.prize, c.x, c.y, 'lime')
     } else if (event.type === 'minigame') {
       pushToast('🎯 Mini Oyun açıldı!')
     }
-  }, [game, pendingSpinResult, pushToast])
+  }, [game, pendingSpinResult, pushToast, getWheelCenter, addFloatingPrize, triggerConfetti, triggerWinFlash])
 
   // --- Mini oyun açma ---
   useEffect(() => {
@@ -132,7 +189,15 @@ export default function App() {
     setGame((g) => applyMiniGameResult(g, type, prize))
     setActiveMiniGame(null)
     pushToast(`Mini oyun ödülü: ${formatTL(prize)}`)
-  }, [activeMiniGame, pushToast])
+    if (prize > 0) {
+      addFloatingPrize(
+        prize,
+        window.innerWidth / 2,
+        window.innerHeight / 2,
+        'cyan'
+      )
+    }
+  }, [activeMiniGame, pushToast, addFloatingPrize])
 
   // --- Tur bitiş kontrolü ---
   useEffect(() => {
@@ -252,6 +317,25 @@ export default function App() {
           onClose={closeResult}
         />
       )}
+
+      {/* === EFEKT KATMANI === */}
+      {floatingPrizes.map((p) => (
+        <FloatingPrize
+          key={p.id}
+          amount={p.amount}
+          x={p.x}
+          y={p.y}
+          variant={p.variant}
+        />
+      ))}
+      {confettiTrigger && (
+        <Confetti
+          trigger={confettiTrigger.key}
+          x={confettiTrigger.x}
+          y={confettiTrigger.y}
+        />
+      )}
+      <WinFlash trigger={winFlashTrigger} />
     </div>
   )
 }
