@@ -54,7 +54,7 @@ export default function App() {
     setToasts((t) => [...t, { id, message }])
     setTimeout(() => {
       setToasts((t) => t.filter((x) => x.id !== id))
-    }, 3000)
+    }, 8000)
   }, [])
 
   // --- Tur başlat ---
@@ -206,6 +206,7 @@ export default function App() {
           <Wheel
             spinSignal={spinSignal}
             targetIndex={targetWheelIndex}
+            isSpinning={isSpinning}
             onSpinEnd={handleSpinEnd}
           />
         </section>

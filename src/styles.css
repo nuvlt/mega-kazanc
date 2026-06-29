@@ -333,62 +333,99 @@ button:disabled {
 }
 
 /* ============================================
-   Çark
+   Çark - modernize sahne
    ============================================ */
 
-.wheel-area {
+.wheel-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 28px 10px 18px;
+  isolation: isolate;
+}
+
+.wheel-spotlight {
+  position: absolute;
+  inset: -10% 5%;
+  background:
+    radial-gradient(ellipse at center, rgba(200, 75, 255, 0.22) 0%, rgba(0, 229, 255, 0.08) 35%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity var(--t-slow);
+}
+
+.wheel-stage.is-spinning .wheel-spotlight {
+  animation: spotlightPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes spotlightPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
 }
 
 .wheel-container {
   position: relative;
-  width: min(280px, 70vw);
+  width: min(360px, 82vw);
   aspect-ratio: 1;
+  z-index: 1;
 }
 
+@media (min-width: 960px) {
+  .wheel-container {
+    width: 340px;
+  }
+}
+
+/* Damla şeklinde altın pointer - SVG ile */
 .wheel-pointer {
   position: absolute;
-  top: -8px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 24px solid var(--accent-cyan);
-  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.8));
+  width: 32px;
+  height: 46px;
   z-index: 5;
+  filter:
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 10px rgba(255, 214, 10, 0.55));
+  transition: filter var(--t-med);
+}
+
+.wheel-stage.is-spinning .wheel-pointer {
+  filter:
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 18px rgba(255, 214, 10, 0.9));
+  animation: pointerWobble 1.2s ease-in-out infinite;
+}
+
+@keyframes pointerWobble {
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  50% { transform: translateX(-50%) rotate(-3deg); }
 }
 
 .wheel-svg {
   width: 100%;
   height: 100%;
-  transition: transform 4s cubic-bezier(0.17, 0.67, 0.21, 1);
-  filter: drop-shadow(0 0 24px rgba(120, 80, 200, 0.4));
+  filter: drop-shadow(0 0 30px rgba(120, 80, 200, 0.45));
 }
 
-.wheel-center {
+.wheel-stage.is-spinning .wheel-svg {
+  filter: drop-shadow(0 0 40px rgba(200, 100, 255, 0.7));
+}
+
+/* Modern hub - SVG katmanı, dönmeyen overlay */
+.wheel-hub {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 22%;
+  width: 30%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--bg-panel) 40%, var(--bg-deep) 100%);
-  border: 2px solid var(--border-strong);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--accent-lime);
-  text-shadow: 0 0 8px var(--accent-lime);
-  box-shadow: 0 0 20px rgba(200, 100, 255, 0.4);
   z-index: 3;
+  filter:
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 14px rgba(200, 100, 255, 0.4));
 }
 
 /* ============================================
@@ -791,33 +828,40 @@ button:disabled {
 
 .event-log {
   position: fixed;
-  bottom: 12px;
-  left: 12px;
-  max-width: 280px;
+  bottom: 16px;
+  left: 16px;
+  max-width: 340px;
   z-index: 50;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .event-toast {
-  background: linear-gradient(135deg, rgba(40, 15, 90, 0.95), rgba(20, 10, 50, 0.95));
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  font-size: 13px;
+  background: linear-gradient(135deg, rgba(50, 20, 110, 0.97), rgba(25, 12, 60, 0.97));
+  border: 1px solid rgba(200, 120, 255, 0.7);
+  border-radius: 12px;
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--text-primary);
-  backdrop-filter: blur(8px);
-  animation: toastSlide 300ms ease-out, toastFade 3s ease-out forwards;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(168, 85, 247, 0.3);
+  animation: toastIn 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both,
+             toastOut 500ms ease-in 7500ms forwards;
 }
 
-@keyframes toastSlide {
-  from { transform: translateX(-100%); opacity: 0; }
+@keyframes toastIn {
+  from { transform: translateX(-120%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes toastFade {
-  0%, 70% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(-100%); }
+@keyframes toastOut {
+  to { transform: translateX(-120%); opacity: 0; }
 }
 
 /* ============================================
