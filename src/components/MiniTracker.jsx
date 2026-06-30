@@ -3,7 +3,7 @@ import { COLLECTION_TARGET } from '../game/config.js'
 export default function MiniTracker({ stars, arrows }) {
   return (
     <div className="mini-tracker">
-      <div className="tracker-item" style={{ '--symbol-color': '#ffd60a' }}>
+      <div className="tracker-item" data-tracker-type="star" style={{ '--symbol-color': '#ffd60a' }}>
         <div className="tracker-label">Yıldız Bonusu</div>
         <div className="tracker-symbols">
           {Array.from({ length: COLLECTION_TARGET }).map((_, i) => (
@@ -17,7 +17,7 @@ export default function MiniTracker({ stars, arrows }) {
           ))}
         </div>
       </div>
-      <div className="tracker-item" style={{ '--symbol-color': '#00e5ff' }}>
+      <div className="tracker-item" data-tracker-type="arrow" style={{ '--symbol-color': '#00e5ff' }}>
         <div className="tracker-label">Ok Bonusu</div>
         <div className="tracker-symbols">
           {Array.from({ length: COLLECTION_TARGET }).map((_, i) => (

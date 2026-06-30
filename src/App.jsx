@@ -20,6 +20,8 @@ import ResultModal from './components/ResultModal.jsx'
 import FloatingPrize from './components/FloatingPrize.jsx'
 import Confetti from './components/Confetti.jsx'
 import WinFlash from './components/WinFlash.jsx'
+import LightningBolt from './components/LightningBolt.jsx'
+import FlyingIcon from './components/FlyingIcon.jsx'
 
 function formatTL(amount) {
   return amount.toLocaleString('tr-TR') + ' TL'
@@ -103,6 +105,94 @@ export default function App() {
     }, 1800)
   }, [])
 
+  // --- Şimşek (renkli dilim) ---
+  const [lightnings, setLightnings] = useState([])
+
+  const triggerLightning = useCallback((targetColor) => {
+    if (typeof document === 'undefined') return
+    const wheelEl = document.querySelector('.wheel-stage')
+    const towerEl = document.querySelector(`[data-tower-color="${targetColor}"]`)
+    if (!wheelEl || !towerEl) return
+
+    const wheelRect = wheelEl.getBoundingClientRect()
+    const towerRect = towerEl.getBoundingClientRect()
+
+    const COLOR_HEX = {
+      red: { core: '#ff3366', glow: '#ff88aa' },
+      orange: { core: '#ff8a1f', glow: '#ffbb66' },
+      yellow: { core: '#ffd60a', glow: '#ffee66' },
+      purple: { core: '#c84bff', glow: '#dd99ff' },
+      blue: { core: '#2e8bff', glow: '#77bbff' },
+      green: { core: '#3ee07d', glow: '#88ffaa' },
+    }
+    const cdef = COLOR_HEX[targetColor] || COLOR_HEX.red
+
+    // 2-3 ardışık şimşek (drama için)
+    const strikes = [
+      { delay: 0 },
+      { delay: 120 },
+      { delay: 260 },
+    ]
+    strikes.forEach((s) => {
+      setTimeout(() => {
+        const id = Math.random().toString(36).slice(2)
+        setLightnings((arr) => [
+          ...arr,
+          {
+            id,
+            startX: wheelRect.left + wheelRect.width / 2,
+            startY: wheelRect.top + wheelRect.height * 0.3, // çark üst yarısı
+            endX: towerRect.left + towerRect.width / 2,
+            endY: towerRect.top + towerRect.height * 0.4, // kulenin orta-üstü
+            color: cdef.core,
+            glow: cdef.glow,
+          },
+        ])
+        setTimeout(() => {
+          setLightnings((arr) => arr.filter((x) => x.id !== id))
+        }, 500)
+      }, s.delay)
+    })
+  }, [])
+
+  // --- Uçan simge (yıldız/ok → tracker) ---
+  const [flyingIcons, setFlyingIcons] = useState([])
+
+  const triggerFlyingIcon = useCallback((kind) => {
+    if (typeof document === 'undefined') return
+    const wheelEl = document.querySelector('.wheel-stage')
+    const trackerEl = document.querySelector(`[data-tracker-type="${kind}"]`)
+    if (!wheelEl || !trackerEl) return
+
+    const wheelRect = wheelEl.getBoundingClientRect()
+    const trackerRect = trackerEl.getBoundingClientRect()
+
+    const id = Math.random().toString(36).slice(2)
+    const icon = kind === 'star' ? '★' : '➤'
+    const color = kind === 'star' ? '#ffd60a' : '#00e5ff'
+
+    setFlyingIcons((arr) => [
+      ...arr,
+      {
+        id,
+        icon,
+        color,
+        startX: wheelRect.left + wheelRect.width / 2,
+        startY: wheelRect.top + wheelRect.height / 2,
+        endX: trackerRect.left + trackerRect.width / 2,
+        endY: trackerRect.top + trackerRect.height / 2,
+        trackerType: kind,
+      },
+    ])
+    // tracker'ı highlight et
+    trackerEl.classList.add('tracker-receiving')
+    setTimeout(() => trackerEl.classList.remove('tracker-receiving'), 1200)
+
+    setTimeout(() => {
+      setFlyingIcons((arr) => arr.filter((x) => x.id !== id))
+    }, 1100)
+  }, [])
+
   // --- Tur başlat ---
   const startRound = useCallback(() => {
     if (balance < betAmount) {
@@ -141,34 +231,39 @@ export default function App() {
       pushToast(`${colorName}: ${event.blocksDestroyed} blok yıkıldı`)
       if (event.rowCompleted) {
         setTimeout(() => pushToast(`🏆 ${colorName} barem tamamlandı: ${formatTL(event.prizeWon)}!`), 300)
-        // Efekt: ödül süzülmesi + konfeti
         const c = getWheelCenter()
         addFloatingPrize(event.prizeWon, c.x, c.y, 'gold')
         triggerConfetti(c.x, c.y)
-        // Yeşil = jackpot, ek ekran parlaması
         if (event.color === 'green') {
           triggerWinFlash()
         }
       }
-      setRecentlyDestroyed({ color: event.color, count: event.blocksDestroyed })
-      setTimeout(() => setRecentlyDestroyed(null), 600)
+      // ŞİMŞEK ÖNCE — kuleye vursun
+      triggerLightning(event.color)
+      // Şimşek hedefini bulunca (~250ms) kule sallansın + bloklar yıkılsın
+      setTimeout(() => {
+        setRecentlyDestroyed({ color: event.color, count: event.blocksDestroyed })
+        setTimeout(() => setRecentlyDestroyed(null), 600)
+      }, 250)
     } else if (event.type === 'star') {
       pushToast(`★ Yıldız (${event.stars}/4)`)
+      // Yıldız simgesi sağ taraftaki tracker'a süzülsün
+      setTimeout(() => triggerFlyingIcon('star'), 80)
     } else if (event.type === 'arrow') {
       pushToast(`➤ Ok (${event.arrows}/4)`)
+      setTimeout(() => triggerFlyingIcon('arrow'), 80)
     } else if (event.type === 'gift') {
       pushToast('🎁 Hediye Oyun! Ekstra çark.')
       setBonusSpinFlash(true)
       setTimeout(() => setBonusSpinFlash(false), 2000)
     } else if (event.type === 'instant') {
       pushToast(`💰 Anında Kazan: ${formatTL(event.prize)}`)
-      // Efekt: yeşil/lime "+X TL" süzülmesi
       const c = getWheelCenter()
       addFloatingPrize(event.prize, c.x, c.y, 'lime')
     } else if (event.type === 'minigame') {
       pushToast('🎯 Mini Oyun açıldı!')
     }
-  }, [game, pendingSpinResult, pushToast, getWheelCenter, addFloatingPrize, triggerConfetti, triggerWinFlash])
+  }, [game, pendingSpinResult, pushToast, getWheelCenter, addFloatingPrize, triggerConfetti, triggerWinFlash, triggerLightning, triggerFlyingIcon])
 
   // --- Mini oyun açma ---
   useEffect(() => {
@@ -336,6 +431,28 @@ export default function App() {
         />
       )}
       <WinFlash trigger={winFlashTrigger} />
+      {lightnings.map((l) => (
+        <LightningBolt
+          key={l.id}
+          startX={l.startX}
+          startY={l.startY}
+          endX={l.endX}
+          endY={l.endY}
+          color={l.color}
+          glow={l.glow}
+        />
+      ))}
+      {flyingIcons.map((f) => (
+        <FlyingIcon
+          key={f.id}
+          icon={f.icon}
+          color={f.color}
+          startX={f.startX}
+          startY={f.startY}
+          endX={f.endX}
+          endY={f.endY}
+        />
+      ))}
     </div>
   )
 }

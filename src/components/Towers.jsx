@@ -16,6 +16,7 @@ export default function Towers({ towers, recentlyDestroyed }) {
           <div
             key={color}
             className={towerClass}
+            data-tower-color={color}
             style={{
               '--block-color': colorDef.hex,
               '--block-glow': colorDef.glow,

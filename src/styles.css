@@ -55,7 +55,7 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
   background: var(--bg-deep);
   color: var(--text-primary);
@@ -1190,6 +1190,275 @@ button:disabled {
   100% { opacity: 0; }
 }
 
+/* --- Şimşek (renkli dilim → kule) --- */
+.lightning-bolt {
+  animation: lightningFlashOut 500ms ease-out forwards;
+}
+
+.lightning-flicker {
+  animation: lightningFlicker 380ms ease-out forwards;
+}
+
+@keyframes lightningFlashOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes lightningFlicker {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  18% { opacity: 0.3; }
+  28% { opacity: 1; }
+  45% { opacity: 0.6; }
+  60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- Uçan simge (yıldız/ok → tracker) --- */
+.flying-icon {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 60;
+  animation: flyToTracker 950ms cubic-bezier(0.45, 0.05, 0.4, 1) forwards;
+  transform: translate(var(--start-x), var(--start-y));
+}
+
+.flying-icon-glyph {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  color: currentColor;
+  text-shadow:
+    0 0 18px currentColor,
+    0 0 36px currentColor,
+    0 4px 6px rgba(0, 0, 0, 0.6);
+  animation: flyIconPulse 950ms ease-out forwards;
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+.flying-icon-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, currentColor 0%, transparent 60%);
+  opacity: 0.45;
+  filter: blur(8px);
+  animation: flyIconPulse 950ms ease-out forwards;
+}
+
+@keyframes flyToTracker {
+  0% {
+    transform: translate(var(--start-x), var(--start-y));
+  }
+  50% {
+    transform: translate(var(--mid-x), var(--mid-y));
+  }
+  100% {
+    transform: translate(var(--end-x), var(--end-y));
+  }
+}
+
+@keyframes flyIconPulse {
+  0% { transform: translate(-50%, -50%) scale(0.4) rotate(-20deg); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1.5) rotate(0deg); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1.1) rotate(15deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.55) rotate(360deg); opacity: 0; }
+}
+
+/* Tracker'a varış vurgusu */
+.tracker-item.tracker-receiving {
+  animation: trackerReceive 900ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  box-shadow:
+    0 0 0 2px var(--symbol-color),
+    0 0 32px var(--symbol-color);
+  border-color: var(--symbol-color);
+}
+
+@keyframes trackerReceive {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ============================================
+   MOBİL RESPONSİVE
+   ============================================ */
+
+/* < 960px: mobil/tablet düzeni */
+@media (max-width: 959px) {
+  .app {
+    padding: 8px 10px;
+    /* Sticky controls için altta boşluk */
+    padding-bottom: 130px;
+    /* dvh fallback'li tam ekran kullan */
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .topbar {
+    padding: 8px 14px;
+  }
+
+  .game-area {
+    gap: 8px;
+  }
+
+  /* Kuleler daha kompakt */
+  .towers {
+    min-height: 160px;
+    gap: 5px;
+    padding: 8px 5px 5px;
+  }
+
+  .tower-block {
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .tower-base {
+    height: 4px;
+  }
+
+  /* Çark biraz daha küçük (alanı verimli kullansın) */
+  .wheel-container {
+    width: min(78vw, 320px);
+  }
+
+  .wheel-stage {
+    padding: 22px 8px 12px;
+  }
+
+  /* Ladder daha kompakt */
+  .panel {
+    padding: 10px;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .ladder-jackpot {
+    padding: 5px 8px;
+    margin-bottom: 4px;
+  }
+
+  .ladder-jackpot-label {
+    font-size: 9px;
+  }
+
+  .ladder-jackpot-amount {
+    font-size: 16px;
+  }
+
+  .ladder-row {
+    padding: 4px 8px;
+  }
+
+  /* Tracker daha sıkı */
+  .mini-tracker {
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .tracker-item {
+    padding: 6px;
+  }
+
+  .tracker-symbol {
+    font-size: 14px;
+  }
+
+  /* === STICKY KONTROL BAR === */
+  .panel-controls {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    /* iOS safe-area */
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 30;
+    margin: 0;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(40, 15, 90, 0.92), rgba(20, 10, 50, 0.95));
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    backdrop-filter: blur(14px);
+    box-shadow:
+      0 -8px 32px rgba(0, 0, 0, 0.6),
+      0 0 20px rgba(168, 85, 247, 0.25);
+    gap: 8px;
+  }
+
+  /* Counter + bet display + play button kompakt */
+  .spin-counter {
+    padding: 5px 10px;
+  }
+
+  .spin-counter-label {
+    font-size: 10px;
+  }
+
+  .spin-counter-value {
+    font-size: 18px;
+  }
+
+  .bet-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .bet-display-value {
+    font-size: 18px;
+  }
+
+  .play-btn {
+    padding: 14px;
+    font-size: 15px;
+    min-height: 50px;
+  }
+
+  /* Toast'ları kontrol bar'ının üstünde tut */
+  .event-log {
+    bottom: 140px;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 130px);
+    left: 12px;
+    max-width: calc(100vw - 24px);
+  }
+
+  /* Uçan simgeler daha küçük mobilde */
+  .flying-icon-glyph {
+    font-size: 42px;
+  }
+}
+
+/* Çok küçük ekranlar (< 380px) */
+@media (max-width: 379px) {
+  .tower-block {
+    height: 9px;
+  }
+  .towers {
+    min-height: 145px;
+    gap: 4px;
+  }
+  .wheel-container {
+    width: 82vw;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1199,7 +1468,7 @@ button:disabled {
   .wheel-stage > svg g {
     transition: transform 1s linear !important;
   }
-  .floating-prize, .confetti-piece, .win-flash-burst {
+  .floating-prize, .confetti-piece, .win-flash-burst, .lightning-bolt, .flying-icon {
     display: none !important;
   }
 }
