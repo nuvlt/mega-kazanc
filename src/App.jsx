@@ -171,7 +171,12 @@ export default function App() {
   const triggerFlyingIcon = useCallback((kind) => {
     if (typeof document === 'undefined') return
     const wheelEl = document.querySelector('.wheel-stage')
-    const trackerEl = document.querySelector(`[data-tracker-type="${kind}"]`)
+    // İki tracker elemanı olabilir (desktop yan panel + mobile sticky HUD).
+    // display:none olan offsetParent'ı null döner - display:block olanı seç.
+    const candidates = Array.from(
+      document.querySelectorAll(`[data-tracker-type="${kind}"]`)
+    )
+    const trackerEl = candidates.find((el) => el.offsetParent !== null)
     if (!wheelEl || !trackerEl) return
 
     const wheelRect = wheelEl.getBoundingClientRect()
@@ -399,6 +404,17 @@ export default function App() {
           >
             {muted ? '🔇' : '🔊'}
           </button>
+          <button
+            className="topbar-icon-btn topbar-info-btn"
+            onClick={() => {
+              sounds.playClick()
+              setShowInfo(true)
+            }}
+            aria-label="Nasıl oynanır?"
+            title="Nasıl oynanır?"
+          >
+            ?
+          </button>
           <div className="balance">
             <div className="balance-label">Bakiye</div>
             <div className="balance-amount">{formatTL(balance)}</div>
@@ -432,6 +448,8 @@ export default function App() {
           canPlay={canPlay}
           onPlay={handlePlayClick}
           bonusSpinActive={bonusSpinFlash}
+          stars={game.stars}
+          arrows={game.arrows}
         />
       </main>
 
@@ -500,19 +518,6 @@ export default function App() {
           endY={f.endY}
         />
       ))}
-
-      {/* Floating info butonu (sağ alt köşe) */}
-      <button
-        className="info-fab"
-        onClick={() => {
-          sounds.playClick()
-          setShowInfo(true)
-        }}
-        aria-label="Nasıl oynanır?"
-        title="Nasıl oynanır?"
-      >
-        ?
-      </button>
 
       {/* Info Modal */}
       {showInfo && (

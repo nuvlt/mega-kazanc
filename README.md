@@ -25,8 +25,9 @@ Türkçe arayüzlü, React/Vite tabanlı bir şans oyunu MVP'si. **Süper Renkle
 - **Konfeti patlaması:** Barem satırı tamamlanınca 36 parçacık 6 renkte çark merkezinden patlar
 - **Jackpot ekran flash'ı:** Yeşil satır (jackpot) tamamlanınca tüm ekrana altın parlama overlay'i
 - **Şimşek:** Renk dilimine düşünce çarktan hedef kuleye çatallı yıldırım (3 ardışık vuruş)
-- **Uçan simge:** Yıldız/ok dilimine düşünce simge çarktan tracker'a kavisli yörüngeyle süzülür
-- **Nasıl oynanır butonu:** Sağ alt köşede floating "?" — kompakt kurallar modalı
+- **Uçan simge:** Yıldız/ok dilimine düşünce simge çarktan tracker'a kavisli yörüngeyle süzülür (desktop'ta sağ panele, mobile'da sticky HUD'a)
+- **Mobile HUD:** Sticky kontrol bar üstünde kompakt yıldız/ok toplama satırı — spin yapılırken sürekli görünür
+- **Nasıl oynanır butonu:** Topbar'da ses toggle'ının yanında "?" — kompakt kurallar modalı
 
 ## Sesler (Web Audio API — ses dosyası yok)
 
@@ -49,7 +50,7 @@ AudioContext ilk kullanıcı etkileşiminde lazy-init (autoplay policy'ye uygun)
 
 ## Kurallar Modalı
 
-Sağ alt köşedeki "?" (mobilde sticky bar üzerinde) butonu tıklanınca oyunun kısa özet kurallarını gösterir:
+Topbar sağında ses toggle'ının yanındaki "?" butonu tıklanınca oyunun kısa özet kurallarını gösterir:
 amaç, çark dilim tipleri, barem çarpanları, RTP bilgisi.
 
 ## RTP

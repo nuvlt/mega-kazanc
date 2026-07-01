@@ -1,4 +1,4 @@
-import { BET_AMOUNTS } from '../game/config.js'
+import { BET_AMOUNTS, COLLECTION_TARGET } from '../game/config.js'
 
 function formatTL(amount) {
   return amount.toLocaleString('tr-TR')
@@ -13,6 +13,8 @@ export default function Controls({
   canPlay,
   onPlay,
   bonusSpinActive,
+  stars = 0,
+  arrows = 0,
 }) {
   const betIndex = BET_AMOUNTS.indexOf(betAmount)
   const canDecrease = betIndex > 0 && !gameActive
@@ -27,6 +29,43 @@ export default function Controls({
 
   return (
     <div className="panel panel-controls">
+      {/* MOBILE HUD - Yıldız / Ok toplama göstergesi (yalnızca mobilde görünür) */}
+      <div className="mobile-hud">
+        <div
+          className="mobile-hud-item"
+          data-tracker-type="star"
+          style={{ '--symbol-color': '#ffd60a' }}
+          aria-label={`Yıldız ${stars} / ${COLLECTION_TARGET}`}
+        >
+          {Array.from({ length: COLLECTION_TARGET }).map((_, i) => (
+            <span
+              key={i}
+              className={`hud-symbol ${i < stars ? 'filled' : ''}`}
+              style={{ '--symbol-color': '#ffd60a' }}
+            >
+              ★
+            </span>
+          ))}
+        </div>
+        <div className="mobile-hud-divider" />
+        <div
+          className="mobile-hud-item"
+          data-tracker-type="arrow"
+          style={{ '--symbol-color': '#00e5ff' }}
+          aria-label={`Ok ${arrows} / ${COLLECTION_TARGET}`}
+        >
+          {Array.from({ length: COLLECTION_TARGET }).map((_, i) => (
+            <span
+              key={i}
+              className={`hud-symbol ${i < arrows ? 'filled' : ''}`}
+              style={{ '--symbol-color': '#00e5ff' }}
+            >
+              ➤
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="spin-counter" aria-live="polite">
         <span className="spin-counter-label">Kalan Çark</span>
         <span className="spin-counter-value">{spinsLeft}</span>
