@@ -24,6 +24,33 @@ Türkçe arayüzlü, React/Vite tabanlı bir şans oyunu MVP'si. **Süper Renkle
 - **Ödül süzülmesi:** Anında kazan / barem tamamlanma / mini oyun ödüllerinde "+X TL" yazısı yukarı doğru süzülerek görünür (altın / cyan / lime varyant)
 - **Konfeti patlaması:** Barem satırı tamamlanınca 36 parçacık 6 renkte çark merkezinden patlar
 - **Jackpot ekran flash'ı:** Yeşil satır (jackpot) tamamlanınca tüm ekrana altın parlama overlay'i
+- **Şimşek:** Renk dilimine düşünce çarktan hedef kuleye çatallı yıldırım (3 ardışık vuruş)
+- **Uçan simge:** Yıldız/ok dilimine düşünce simge çarktan tracker'a kavisli yörüngeyle süzülür
+- **Nasıl oynanır butonu:** Sağ alt köşede floating "?" — kompakt kurallar modalı
+
+## Sesler (Web Audio API — ses dosyası yok)
+
+Tüm sesler kod içinde oscillator + noise buffer ile üretilir (`src/game/sounds.js`):
+
+- **Çark whoosh:** 3.8 saniyelik filtrelenmiş noise, pitch alçalır
+- **Çivi tıkırtıları:** 55 tıkırtı, cubic ease-out yörüngesine göre zamanlanır (gerçek yavaşlama hissi)
+- **Çark durma:** 200Hz → 65Hz bas thud + kısa impact noise
+- **Şimşek:** Highpass noise crack + 80Hz → 40Hz bas gürleme
+- **Blok kırılma:** Bandpass noise burst (1400Hz)
+- **Yıldız/Ok topla:** İki notalı çan (1400 + 2100 Hz)
+- **Anında kazan:** Üç notalı ascending triangle (A5 → E6 → A6)
+- **Hediye:** Kısa fanfar (E5 → G5 → B5)
+- **Barem tamamlanma:** C majör arpej (C E G C)
+- **Jackpot:** Üç akorlu triumphant (C E G C → D F# A D → E G# B E) + bas C
+- **UI click:** Kısa square 700Hz → 200Hz
+
+Sağ üst köşede 🔊/🔇 butonu ile sesi aç/kapat (localStorage'da persist).
+AudioContext ilk kullanıcı etkileşiminde lazy-init (autoplay policy'ye uygun).
+
+## Kurallar Modalı
+
+Sağ alt köşedeki "?" (mobilde sticky bar üzerinde) butonu tıklanınca oyunun kısa özet kurallarını gösterir:
+amaç, çark dilim tipleri, barem çarpanları, RTP bilgisi.
 
 ## RTP
 

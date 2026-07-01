@@ -22,6 +22,8 @@ import Confetti from './components/Confetti.jsx'
 import WinFlash from './components/WinFlash.jsx'
 import LightningBolt from './components/LightningBolt.jsx'
 import FlyingIcon from './components/FlyingIcon.jsx'
+import InfoModal from './components/InfoModal.jsx'
+import { sounds } from './game/sounds.js'
 
 function formatTL(amount) {
   return amount.toLocaleString('tr-TR') + ' TL'
@@ -49,6 +51,14 @@ export default function App() {
   // --- Modals ---
   const [activeMiniGame, setActiveMiniGame] = useState(null) // 'star' | 'arrow' | 'direct' | null
   const [showResult, setShowResult] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
+
+  // --- Ses ayarı (localStorage'da persist) ---
+  const [muted, setMutedState] = useState(() => sounds.isMuted())
+  const toggleMuted = useCallback(() => {
+    const newVal = sounds.toggle()
+    setMutedState(newVal)
+  }, [])
 
   // --- Toasts ---
   const [toasts, setToasts] = useState([])
@@ -214,6 +224,8 @@ export default function App() {
     setTargetWheelIndex(result.segmentIndex)
     setSpinSignal((s) => s + 1)
     setIsSpinning(true)
+    // Ses: whoosh + çivi tıkırtıları
+    sounds.startSpinSound()
   }, [gameActive, isSpinning, game.spinsLeft])
 
   // --- Çark döndü, sonucu uygula ---
@@ -224,6 +236,10 @@ export default function App() {
     setGame(newState)
     setIsSpinning(false)
     setPendingSpinResult(null)
+
+    // Ses: çark durdu (thud)
+    sounds.stopSpinSound()
+    sounds.playLand()
 
     // Olay toast'u
     if (event.type === 'color') {
@@ -236,32 +252,48 @@ export default function App() {
         triggerConfetti(c.x, c.y)
         if (event.color === 'green') {
           triggerWinFlash()
+          // Ses: jackpot fanfar (crash + win yerine)
+          setTimeout(() => sounds.playJackpot(), 400)
+        } else {
+          // Ses: normal barem tamamlanma
+          setTimeout(() => sounds.playWin(), 550)
         }
       }
+      // Ses: şimşek (kısa gecikmeyle çark thud'ıyla ayrı duyulsun)
+      setTimeout(() => sounds.playThunder(), 150)
       // ŞİMŞEK ÖNCE — kuleye vursun
       triggerLightning(event.color)
-      // Şimşek hedefini bulunca (~250ms) kule sallansın + bloklar yıkılsın
+      // Şimşek hedefini bulunca (~250ms) kule sallansın + bloklar yıkılsın + crash
       setTimeout(() => {
         setRecentlyDestroyed({ color: event.color, count: event.blocksDestroyed })
+        sounds.playCrash()
         setTimeout(() => setRecentlyDestroyed(null), 600)
       }, 250)
     } else if (event.type === 'star') {
       pushToast(`★ Yıldız (${event.stars}/4)`)
-      // Yıldız simgesi sağ taraftaki tracker'a süzülsün
-      setTimeout(() => triggerFlyingIcon('star'), 80)
+      setTimeout(() => {
+        triggerFlyingIcon('star')
+        sounds.playPling()
+      }, 80)
     } else if (event.type === 'arrow') {
       pushToast(`➤ Ok (${event.arrows}/4)`)
-      setTimeout(() => triggerFlyingIcon('arrow'), 80)
+      setTimeout(() => {
+        triggerFlyingIcon('arrow')
+        sounds.playPling()
+      }, 80)
     } else if (event.type === 'gift') {
       pushToast('🎁 Hediye Oyun! Ekstra çark.')
       setBonusSpinFlash(true)
       setTimeout(() => setBonusSpinFlash(false), 2000)
+      setTimeout(() => sounds.playGift(), 150)
     } else if (event.type === 'instant') {
       pushToast(`💰 Anında Kazan: ${formatTL(event.prize)}`)
       const c = getWheelCenter()
       addFloatingPrize(event.prize, c.x, c.y, 'lime')
+      setTimeout(() => sounds.playCoin(), 150)
     } else if (event.type === 'minigame') {
       pushToast('🎯 Mini Oyun açıldı!')
+      setTimeout(() => sounds.playPling(), 150)
     }
   }, [game, pendingSpinResult, pushToast, getWheelCenter, addFloatingPrize, triggerConfetti, triggerWinFlash, triggerLightning, triggerFlyingIcon])
 
@@ -291,6 +323,9 @@ export default function App() {
         window.innerHeight / 2,
         'cyan'
       )
+      sounds.playWin()
+    } else {
+      sounds.playClick()
     }
   }, [activeMiniGame, pushToast, addFloatingPrize])
 
@@ -323,6 +358,7 @@ export default function App() {
   )
 
   const handlePlayClick = () => {
+    sounds.playClick()
     if (!gameActive) {
       startRound()
     } else {
@@ -335,6 +371,7 @@ export default function App() {
     if (gameActive) return
     setBetAmount(newBet)
     setGame((g) => ({ ...g, betAmount: newBet }))
+    sounds.playClick()
   }
 
   // Bilet değiştiğinde initial state'i güncelle
@@ -353,9 +390,19 @@ export default function App() {
           <div className="logo-mark" aria-hidden="true" />
           <div className="logo-text">Mega Kazanç</div>
         </div>
-        <div className="balance">
-          <div className="balance-label">Bakiye</div>
-          <div className="balance-amount">{formatTL(balance)}</div>
+        <div className="topbar-right">
+          <button
+            className="topbar-icon-btn"
+            onClick={toggleMuted}
+            aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}
+            title={muted ? 'Sesi aç' : 'Sesi kapat'}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+          <div className="balance">
+            <div className="balance-label">Bakiye</div>
+            <div className="balance-amount">{formatTL(balance)}</div>
+          </div>
         </div>
       </header>
 
@@ -453,6 +500,29 @@ export default function App() {
           endY={f.endY}
         />
       ))}
+
+      {/* Floating info butonu (sağ alt köşe) */}
+      <button
+        className="info-fab"
+        onClick={() => {
+          sounds.playClick()
+          setShowInfo(true)
+        }}
+        aria-label="Nasıl oynanır?"
+        title="Nasıl oynanır?"
+      >
+        ?
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <InfoModal
+          onClose={() => {
+            sounds.playClick()
+            setShowInfo(false)
+          }}
+        />
+      )}
     </div>
   )
 }
